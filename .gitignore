@@ -1,0 +1,33 @@
+# Archivos de entorno
+.env
+
+# Archivos de configuración de entorno virtual
+venv/
+velas/
+*.pyc
+__pycache__/
+*.pyo
+*.pyd
+
+# Archivos y carpetas de Django
+db.sqlite3
+media/
+staticfiles/
+*.log
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+
+# Archivos de compilación y caches
+*.egg-info/
+*.egg
+*.bak
+
+# Archivos de IDEs
+.vscode/
+.idea/
+
+# Archivos de pruebas o backups
+*.old
+*.orig

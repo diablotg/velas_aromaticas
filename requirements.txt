@@ -1,0 +1,33 @@
+# ==========================
+# 🕯️ Tienda de Velas Aromáticas
+# Dependencias principales del proyecto Django con PostgreSQL
+# ==========================
+
+# Framework base
+Django==5.1.1
+
+# Integración de pagos
+stripe==10.5.0
+
+# Variables de entorno
+python-dotenv==1.0.1
+
+# Formularios con Bootstrap
+django-crispy-forms==2.3
+crispy-bootstrap5==0.7
+
+# Autenticación con Google y correo
+django-allauth==64.0.0
+
+# Manejo de CORS y seguridad
+django-cors-headers==4.5.0
+
+# Peticiones HTTP (para APIs de envío o integraciones futuras)
+requests==2.32.3
+
+# PostgreSQL
+psycopg2-binary==2.9.9
+
+# ==========================
+# FIN DEL ARCHIVO
+# ==========================
