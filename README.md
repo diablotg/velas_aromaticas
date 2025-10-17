@@ -1,12 +1,12 @@
-# Velas Aromáticas
+# Tienda en linea con enfoque a expansion
 
-Aplicación de ventas en línea para velas aromáticas, con enfoque en experiencia de usuario simple, segura y orientada a la conversión. Permite agregar productos al carrito, elegir envío o recolección, y pagar con tarjeta.
+Aplicación de ventas en línea, con enfoque en experiencia de usuario simple, segura y orientada a la conversión. Permite agregar productos al carrito, elegir envío o recolección, y pagar con tarjeta.
 
 ---
 
 ## Características
 
-- Venta de velas aromáticas con carrito de compras.
+- Venta de cualquier producto con carrito de compras.
 - Checkout en dos columnas:
   - **Columna izquierda:** correo del comprador, dirección de entrega o recolección.
   - **Columna derecha:** pago con tarjeta (Stripe) en una sola exhibición.
@@ -40,5 +40,5 @@ Aplicación de ventas en línea para velas aromáticas, con enfoque en experienc
 1. Crear y activar entorno virtual:
 
 ```bash
-python -m venv velas
-source velas/bin/activate
+python -m venv venv
+```
