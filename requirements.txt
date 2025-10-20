@@ -1,8 +1,3 @@
-# ==========================
-# 🕯️ Tienda de Velas Aromáticas
-# Dependencias principales del proyecto Django con PostgreSQL
-# ==========================
-
 # Framework base
 Django==5.1.1
 
