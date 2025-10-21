@@ -19,7 +19,15 @@ from django.contrib import admin
 from django.urls import path
 from django.urls import include
 
+
+def home(request):
+    from django.http import HttpResponse
+
+    return HttpResponse("Welcome to the Core Application!")
+
+
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("payments/", include("payments.urls")),
+    path("", home, name="home"),
 ]

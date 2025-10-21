@@ -2,10 +2,12 @@ from django.contrib import admin
 from .models import Address, Order, OrderItem
 
 
+# Inline para los items de un pedido
 class OrderItemInline(admin.TabularInline):
     model = OrderItem
-    extra = 0  #
-    readonly_fields = ("product", "quantity", "get_total_price")
+    extra = 0
+    readonly_fields = ["get_total_price"]
+    fields = ["product", "quantity", "get_total_price"]
 
     def get_total_price(self, obj):
         return obj.get_total_price()
@@ -31,13 +33,14 @@ class AddressAdmin(admin.ModelAdmin):
         "phone_number",
         "street_address",
         "city",
+        "state",
         "country",
         "is_default",
         "created_at",
     )
     list_filter = ("country", "is_default", "state")
     search_fields = (
-        "user_email",
+        "user__email",
         "full_name",
         "last_name",
         "street_address",
@@ -45,3 +48,4 @@ class AddressAdmin(admin.ModelAdmin):
         "postal_code",
         "country",
     )
+    ordering = ("-is_default", "-created_at")
