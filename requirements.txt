@@ -21,7 +21,17 @@ django-cors-headers==4.5.0
 requests==2.32.3
 
 # PostgreSQL
-psycopg2-binary==2.9.9
+psycopg2-binary==2.9.11
+
+# Dependencias adicionales del entorno
+asgiref==3.10.0
+certifi==2025.10.5
+charset-normalizer==3.4.4
+idna==3.11
+pillow==12.0.0
+sqlparse==0.5.3
+typing_extensions==4.15.0
+urllib3==2.5.0
 
 # ==========================
 # FIN DEL ARCHIVO
