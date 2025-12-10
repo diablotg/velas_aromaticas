@@ -26,7 +26,7 @@
     <a class="navbar-brand fw-bold" href="#">Velas Aromáticas SAMADHI.</a>
     <div>
       <button class="btn btn-outline-secondary position-relative" data-bs-toggle="offcanvas" data-bs-target="#cartDrawer" aria-controls="cartDrawer">
-        🛒 <!-- boton de carrito-->
+        🛒
         <span id="cartCountBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:0.75rem; display:none;">0</span>
       </button>
     </div>
@@ -39,9 +39,9 @@
   <div class="row g-4">
     {% for product in products %}
       <div class="col-md-4">
-        <div class="card product-card h-100" 
-             data-id="{{ product.id }}" 
-             data-name="{{ product.name }}" 
+        <div class="card product-card h-100"
+             data-id="{{ product.id }}"
+             data-name="{{ product.name }}"
              data-price="{{ product.price }}">
           {% if product.image %}
             <img src="{{ product.image.url }}" class="card-img-top img-fluid" alt="{{ product.name }}" style="height: 250px; object-fit: cover;">
@@ -63,15 +63,15 @@
 </div>
 
 <!-- Floating cart button (mobile) -->
-<button class="btn btn-primary rounded-circle cart-icon d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#cartDrawer" aria-controls="cartDrawer" title="Abrir carrito">
+<button class="btn btn-primary rounded-circle cart-icon d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#cartDrawer">
   🛒
 </button>
 
-<!-- Offcanvas cart (drawer) -->
-<div class="offcanvas offcanvas-end" tabindex="-1" id="cartDrawer" aria-labelledby="cartDrawerLabel">
+<!-- Offcanvas cart -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="cartDrawer">
   <div class="offcanvas-header">
-    <h5 id="cartDrawerLabel" class="offcanvas-title">Tu carrito</h5>
-    <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Cerrar"></button>
+    <h5 class="offcanvas-title">Tu carrito</h5>
+    <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas"></button>
   </div>
   <div class="offcanvas-body d-flex flex-column">
     <div id="cartItems" class="list-group mb-3">
@@ -94,20 +94,25 @@
       </div>
       <div class="d-grid gap-2">
         <a href="#" class="btn btn-outline-secondary" id="viewCartBtn">Ver carrito completo</a>
-        <button class="btn btn-primary" id="checkoutBtn" data-bs-dismiss="offcanvas">Finalizar compra</button>
+
+        <!-- 🔥 AQUI SE AGREGA EL BOTÓN QUE YA LLAMA A checkout() -->
+        <button onclick="checkout()" class="btn btn-primary">
+          Proceder al pago
+        </button>
+
       </div>
     </div>
   </div>
 </div>
 
-<!-- Bootstrap 5 JS + Popper -->
+<!-- Bootstrap 5 JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
-<!-- Carrito JS -->
 <script>
-
 (() => {
-  // Helpers CSRF
+  /* ============================
+     CSRF + Variables
+  ============================ */
   function getCookie(name) {
     let cookieValue = null;
     if (document.cookie && document.cookie !== '') {
@@ -124,7 +129,6 @@
   }
   const csrftoken = getCookie('csrftoken');
 
-  // DOM refs
   const cartCountBadge = document.getElementById('cartCountBadge');
   const cartItemsContainer = document.getElementById('cartItems');
   const cartSubtotalEl = document.getElementById('cartSubtotal');
@@ -135,28 +139,27 @@
 
   const fmt = (n) => Number(n).toLocaleString('es-MX', { style:'currency', currency:'MXN', minimumFractionDigits:2 });
 
-  // cart object local is kept for UI convenience, but authoritative state comes from server
   let cart = { items: [], subtotal: "0.00", count: 0 };
   let discountApplied = false;
 
-  // Render UI from server cart state
+  /* ============================
+     Render Cart
+  ============================ */
   function renderFromServerCart(serverCart) {
     cart.items = serverCart.items;
     cart.subtotal = serverCart.subtotal;
     cart.count = serverCart.count || serverCart.items.reduce((s,i)=>s+i.qty,0);
-    // clear container
+
     cartItemsContainer.innerHTML = '';
-    if (cart.items.length === 0) {
-      emptyPrompt.style.display = 'block';
-    } else {
-      emptyPrompt.style.display = 'none';
-    }
+    emptyPrompt.style.display = cart.items.length === 0 ? 'block' : 'none';
+
     let total = parseFloat(serverCart.subtotal || "0.00");
 
     cart.items.forEach(item => {
       const li = document.createElement('div');
       li.className = 'list-group-item d-flex align-items-center';
       const img = item.image_url || 'https://via.placeholder.com/56x56';
+
       li.innerHTML = `
         <div class="flex-shrink-0 me-3" style="width:56px;">
           <img src="${img}" alt="${item.name}" class="img-fluid rounded">
@@ -180,17 +183,12 @@
       cartItemsContainer.appendChild(li);
     });
 
-    if (discountApplied) total = total * 0.9;
+    if (discountApplied) total *= 0.9;
     cartSubtotalEl.textContent = fmt(total);
 
-    if (cart.count > 0) {
-      cartCountBadge.style.display = 'inline-block';
-      cartCountBadge.textContent = cart.count;
-    } else {
-      cartCountBadge.style.display = 'none';
-    }
+    cartCountBadge.style.display = cart.count > 0 ? 'inline-block' : 'none';
+    cartCountBadge.textContent = cart.count;
 
-    // wire events
     document.querySelectorAll('.increase-qty').forEach(btn => {
       btn.onclick = () => ajaxUpdateQty(btn.dataset.id, +1);
     });
@@ -202,17 +200,13 @@
     });
   }
 
-  // Fetch server cart on load
   async function fetchCart() {
     const res = await fetch('/api/cart/');
     if (!res.ok) return;
     const data = await res.json();
-    if (data.success) {
-      renderFromServerCart(data.cart);
-    }
+    if (data.success) renderFromServerCart(data.cart);
   }
 
-  // Add item via API (adds +1 or qty)
   async function ajaxAdd(productId, qty = 1) {
     const form = new FormData();
     form.append('product_id', productId);
@@ -226,7 +220,6 @@
     if (data.success) renderFromServerCart(data.cart);
   }
 
-  // Remove item
   async function ajaxRemove(productId) {
     const form = new FormData();
     form.append('product_id', productId);
@@ -239,15 +232,15 @@
     if (data.success) renderFromServerCart(data.cart);
   }
 
-  // Update qty delta (+1 or -1)
   async function ajaxUpdateQty(productId, delta) {
-    // find current qty in DOM (or ask server state)
     const item = cart.items.find(i => String(i.id) === String(productId));
     const currentQty = item ? item.qty : 0;
-    const newQty = currentQty + delta;
+    const newQty = Math.max(0, currentQty + delta);
+
     const form = new FormData();
     form.append('product_id', productId);
-    form.append('qty', Math.max(0, newQty));
+    form.append('qty', newQty);
+
     const res = await fetch('/api/cart/update/', {
       method: 'POST',
       headers: { 'X-CSRFToken': csrftoken },
@@ -257,15 +250,14 @@
     if (data.success) renderFromServerCart(data.cart);
   }
 
-  // wire catalog add-to-cart buttons: use delegation or reattach after fetch catalog
   function attachAddButtons() {
     document.querySelectorAll('.add-to-cart').forEach(btn=>{
       btn.onclick = async () => {
         const card = btn.closest('.product-card');
         const id = card.dataset.id;
-        // Call server
+
         await ajaxAdd(id, 1);
-        // open offcanvas
+
         const offcanvasEl = document.getElementById('cartDrawer');
         const bsOffcanvas = bootstrap.Offcanvas.getOrCreateInstance(offcanvasEl);
         bsOffcanvas.show();
@@ -273,7 +265,9 @@
     });
   }
 
-  // Discount button (local demo)
+  /* ============================
+     DESCUENTO
+  ============================ */
   discountBtn.addEventListener('click', () => {
     const code = discountInput.value.trim().toUpperCase();
     if (code === 'VELA10') {
@@ -287,30 +281,41 @@
       discountMessage.classList.remove('text-success');
       discountMessage.classList.add('text-danger');
     }
-    // rerender using current server subtotal
     renderFromServerCart({items: cart.items, subtotal: cart.subtotal});
   });
 
-  // view cart / checkout buttons (you can hook to /checkout later)
-  document.getElementById('viewCartBtn').addEventListener('click', (e)=>{
-    e.preventDefault();
-    // si quieres abrir página completa: window.location.href = '/cart/';
-    alert('Ver carrito completo (redirigir a /cart en la app real).');
-  });
-  document.getElementById('checkoutBtn').addEventListener('click', ()=>{
-    if (cart.items.length === 0) return alert('Tu carrito está vacío.');
-    // redirigir a checkout real más adelante
-    alert('Ir al checkout (redirigir a /checkout en la app real).');
-  });
+  /* ============================
+     🔥 Aquí agregamos checkout()
+  ============================ */
+  window.checkout = function() {
+    if (cart.items.length === 0) {
+      alert("Tu carrito está vacío");
+      return;
+    }
 
-  // Inicialización
-  fetchCart().then(() => {
-    attachAddButtons();
-  });
+    fetch("/checkout/create-order/", {
+        method: "POST",
+        headers: {
+            "X-CSRFToken": getCookie("csrftoken"),
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.order_id) {
+            alert("Orden creada correctamente. ID: " + data.order_id);
+        } else {
+            alert("Error al crear la orden");
+        }
+    });
+  };
+
+  /* ============================
+     Inicialización
+  ============================ */
+  fetchCart().then(() => attachAddButtons());
+
 })();
 </script>
 
 </body>
 </html>
-
-

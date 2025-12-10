@@ -4,10 +4,10 @@ from django.urls import include
 from django.conf import settings
 from django.conf.urls.static import static
 
-
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("payments/", include("payments.urls")),
+    path("checkout/", include("checkout.urls")),
     path("", include("cart.urls")),
 ]
 
