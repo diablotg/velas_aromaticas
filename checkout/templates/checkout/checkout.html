@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Revisar Orden</title>
+</head>
+<body>
+    <h1>Confirmar Orden</h1>
+
+    <p>Tu orden está lista para procesarse.</p>
+
+    <button id="btnPay">Proceder al pago</button>
+
+    <script>
+        document.getElementById("btnPay").addEventListener("click", async () => {
+            const response = await fetch("/checkout/create-order/", {
+                method: "POST",
+                credentials: "include"
+            });
+
+            const data = await response.json();
+
+            if (data.order_id) {
+                window.location.href = `/checkout/success/${data.order_id}/`;
+            } else {
+                alert("Error al crear la orden");
+            }
+        });
+    </script>
+</body>
+</html>

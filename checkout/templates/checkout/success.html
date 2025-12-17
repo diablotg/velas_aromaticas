@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Orden Completada</title>
+</head>
+<body>
+
+    <h1>Orden #{{ order.id }} creada correctamente</h1>
+
+    <h3>Productos:</h3>
+    <ul>
+        {% for item in items %}
+            <li>{{ item.product.name }} x {{ item.quantity }} – ${{ item.subtotal }}</li>
+        {% endfor %}
+    </ul>
+
+    <h2>Total: ${{ order.total }}</h2>
+
+</body>
+</html>

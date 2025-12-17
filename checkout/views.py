@@ -1,55 +1,38 @@
-import json
-from django.http import JsonResponse
+# checkout/views.py
+from django.shortcuts import render
 from products.models import Product
-from .models import Order, OrderItem
-from django.views.decorators.csrf import csrf_exempt
+from decimal import Decimal
+from cart.views import _get_cart  # o usar tu propia util en cart/utils
+
+# si prefieres no importar _get_cart de views, mueve la lógica a utils y úsala desde ambos lados
 
 
-@csrf_exempt
-def create_order(request):
-    if request.method != "POST":
-        return JsonResponse({"error": "Método no permitido"}, status=405)
+def checkout_view(request):
+    cart = _get_cart(request)  # carrito en sesión: {product_id: {"qty": X}, ...}
+    items = []
+    total = Decimal("0.00")
 
-    try:
-        cart_data = request.COOKIES.get("cart")
-        cart = json.loads(cart_data) if cart_data else {}
-    except:
-        return JsonResponse({"error": "Carrito inválido"}, status=400)
-
-    if not cart:
-        return JsonResponse({"error": "El carrito está vacío"}, status=400)
-
-    order = Order.objects.create(total=0)
-
-    cart_total = 0
-
-    for product_id, item in cart.items():
+    for pid, info in cart.items():
         try:
-            product = Product.objects.get(id=product_id)
+            product = Product.objects.get(pk=pid)
         except Product.DoesNotExist:
-            continue  # ignorar productos inválidos
-
-        quantity = item.get("quantity", 0)
-
-        # Validar cantidades
-        if quantity < 1 or quantity > 20:
             continue
-
-        # Nunca usamos el precio que viene del cliente
-        price = product.price
-
-        line_total = price * quantity
-        cart_total += line_total
-
-        OrderItem.objects.create(
-            order=order,
-            product=product,
-            quantity=quantity,
-            price=price,
-            subtotal=line_total,
+        qty = info.get("qty", 0)
+        line_total = product.price * qty
+        total += line_total
+        items.append(
+            {
+                "product": product,
+                "qty": qty,
+                "line_total": line_total,
+            }
         )
 
-    order.total = cart_total
-    order.save()
-
-    return JsonResponse({"order_id": order.id})
+    return render(
+        request,
+        "checkout/checkout.html",
+        {
+            "items": items,
+            "total": total,
+        },
+    )
