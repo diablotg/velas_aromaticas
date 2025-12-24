@@ -1,40 +1,42 @@
-import json
-from django.http import HttpResponse, JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from django.conf import settings
 import stripe
-from checkout.models import Order
+from django.conf import settings
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
 
-@csrf_exempt
-def stripe_webhook(request):
-    payload = request.body
-    sig_header = request.META.get("HTTP_STRIPE_SIGNATURE")
-    endpoint_secret = settings.STRIPE_WEBHOOK_SECRET
+def create_checkout_session(order, request):
+    """
+    Crea una sesión de Stripe Checkout a partir de una Order
+    """
 
-    try:
-        event = stripe.Webhook.construct_event(
-            payload=payload, sig_header=sig_header, secret=endpoint_secret
+    line_items = []
+
+    for item in order.items.all():
+        line_items.append(
+            {
+                "price_data": {
+                    "currency": "mxn",
+                    "product_data": {
+                        "name": item.product.name,
+                    },
+                    "unit_amount": int(item.price * 100),
+                },
+                "quantity": item.quantity,
+            }
         )
-    except (ValueError, stripe.error.SignatureVerificationError):
-        return HttpResponse(status=400)
 
-    if event["type"] == "payment_intent.succeeded":
-        payment_intent = event["data"]["object"]
-        order_id = payment_intent.get("metadata", {}).get("order_id")
+    session = stripe.checkout.Session.create(
+        payment_method_types=["card"],
+        line_items=line_items,
+        mode="payment",
+        customer_email=order.email,
+        success_url=request.build_absolute_uri(
+            f"/payments/success/?order_id={order.id}"
+        ),
+        cancel_url=request.build_absolute_uri("/checkout/"),
+        metadata={
+            "order_id": order.id,
+        },
+    )
 
-        if order_id:
-            try:
-                order = Order.objects.get(id=order_id)
-                order.status = "confirmado"
-                order.save()
-            except Order.DoesNotExist:
-                pass
-
-    elif event["type"] == "payment_intent.payment_failed":
-        payment_intent = event["data"]["object"]
-        print(f"Pago fallido: {payment_intent['id']}")
-
-    return HttpResponse(status=200)
+    return session

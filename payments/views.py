@@ -1,32 +1,41 @@
 import stripe
+import json
+
 from django.conf import settings
-from django.shortcuts import redirect
-from django.http import JsonResponse
-from checkout.models import Order
+from django.http import HttpResponse
+from django.views.decorators.csrf import csrf_exempt
+
+from orders.models import Order
+
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
 
-def create_checkout_session(request):
-    order_id = request.GET.get("order_id")
-    order = Order.objects.get(id=order_id)
+@csrf_exempt
+def stripe_webhook(request):
+    payload = request.body
+    sig_header = request.META.get("HTTP_STRIPE_SIGNATURE")
+    endpoint_secret = settings.STRIPE_WEBHOOK_SECRET
 
-    session = stripe.checkout.Session.create(
-        payment_method_types=["card"],
-        line_items=[
-            {
-                "price_data": {
-                    "currency": "usd",
-                    "product_data": {"name": "Pedido #" + str(order.id)},
-                    "unit_amount": int(order.total * 100),
-                },
-                "quantity": 1,
-            }
-        ],
-        mode="payment",
-        success_url="http://localhost:8000/success/",
-        cancel_url="http://localhost:8000/cancel/",
-        metadata={"order_id": str(order.id)},
-    )
+    try:
+        event = stripe.Webhook.construct_event(payload, sig_header, endpoint_secret)
+    except ValueError:
+        return HttpResponse(status=400)
+    except stripe.error.SignatureVerificationError:
+        return HttpResponse(status=400)
 
-    return JsonResponse({"id": session.id})
+    # Evento más importante
+    if event["type"] == "checkout.session.completed":
+        session = event["data"]["object"]
+
+        order_id = session["metadata"].get("order_id")
+
+        if order_id:
+            try:
+                order = Order.objects.get(id=order_id)
+                order.status = "PAID"
+                order.save()
+            except Order.DoesNotExist:
+                pass
+
+    return HttpResponse(status=200)

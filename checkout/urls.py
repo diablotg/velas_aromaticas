@@ -1,7 +1,6 @@
 from django.urls import path
-from . import views
+from .views import checkout_view
 
 urlpatterns = [
-    path("", views.checkout_view, name="checkout"),
-    path("create-order/", views.create_order, name="create_order"),
+    path("", checkout_view, name="checkout"),
 ]
