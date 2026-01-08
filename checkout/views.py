@@ -132,15 +132,17 @@ def checkout_view(request):
             )
 
         # =========================
-        # 4. Crear Stripe Session
+        # 4. Stripe Checkout Session
         # =========================
         session = stripe.checkout.Session.create(
-            payment_method_types=["card"],
             mode="payment",
+            payment_method_types=["card"],
             line_items=stripe_items,
-            success_url="http://127.0.0.1:8000/orders/success/",
+            success_url=f"http://127.0.0.1:8000/orders/success/{order.id}/",
             cancel_url="http://127.0.0.1:8000/checkout/",
-            metadata={"order_id": order.id},
+            metadata={
+                "order_id": str(order.id),
+            },
         )
 
         return redirect(session.url, code=303)

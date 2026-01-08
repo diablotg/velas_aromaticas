@@ -4,39 +4,27 @@ from django.conf import settings
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
 
-def create_checkout_session(order, request):
-    """
-    Crea una sesión de Stripe Checkout a partir de una Order
-    """
-
-    line_items = []
-
-    for item in order.items.all():
-        line_items.append(
+def create_checkout_session(order):
+    session = stripe.checkout.Session.create(
+        payment_method_types=["card"],
+        mode="payment",
+        line_items=[
             {
                 "price_data": {
                     "currency": "mxn",
                     "product_data": {
-                        "name": item.product.name,
+                        "name": f"Pedido #{order.id}",
                     },
-                    "unit_amount": int(item.price * 100),
+                    "unit_amount": int(order.total * 100),
                 },
-                "quantity": item.quantity,
+                "quantity": 1,
             }
-        )
-
-    session = stripe.checkout.Session.create(
-        payment_method_types=["card"],
-        line_items=line_items,
-        mode="payment",
-        customer_email=order.email,
-        success_url=request.build_absolute_uri(
-            f"/payments/success/?order_id={order.id}"
-        ),
-        cancel_url=request.build_absolute_uri("/checkout/"),
+        ],
         metadata={
-            "order_id": order.id,
+            "order_id": str(order.id),
         },
+        success_url=f"http://127.0.0.1:8000/orders/success/{order.id}/",
+        cancel_url="http://127.0.0.1:8000/cart/",
     )
 
     return session

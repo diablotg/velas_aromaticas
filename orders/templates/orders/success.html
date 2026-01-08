@@ -37,6 +37,16 @@
           <p class="mb-1">
             <strong>Número de pedido:</strong> #{{ order.id }}
           </p>
+            <strong>Resumen de tu pedido</strong>
+
+              <ul>
+                {% for item in items %}
+                  <li>
+                    {{ item.product_name }} 
+                    {{ item.quantity }} × ${{ item.price }}
+                  </li>
+                {% endfor %}
+              </ul>
 
           <p class="mb-1">
             <strong>Correo:</strong> {{ order.email }}
@@ -50,7 +60,7 @@
             Guarda este número de pedido para cualquier aclaración.
           </div>
 
-          <a href="{% url 'cart:home' %}" class="btn btn-primary mt-3">
+          <a href="{% url 'home' %}" class="btn btn-primary mt-3">
             Volver a la tienda
           </a>
 
@@ -60,6 +70,42 @@
     </div>
   </div>
 </div>
+
+<script>
+let attempts = 0;
+const maxAttempts = 5;
+let intervalId = null;
+
+function checkOrderStatus() {
+    attempts++;
+
+    fetch("{% url 'orders:order_status' order.id %}")
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === "PAID") {
+                document.getElementById("order-status").innerText =
+                    "Pago acreditado correctamente";
+                clearInterval(intervalId);
+                return;
+            }
+
+            if (attempts >= maxAttempts) {
+                document.getElementById("order-status").innerText =
+                    "Estamos verificando tu pago. Si ya pagaste, se confirmará en breve.";
+                clearInterval(intervalId);
+            }
+        })
+        .catch(() => {
+            if (attempts >= maxAttempts) {
+                clearInterval(intervalId);
+            }
+        });
+}
+
+intervalId = setInterval(checkOrderStatus, 2000);
+</script>
+
+
 
 </body>
 </html>
