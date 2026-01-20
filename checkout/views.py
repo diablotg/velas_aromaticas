@@ -1,5 +1,5 @@
 from decimal import Decimal
-
+import re
 import stripe
 from django.conf import settings
 from django.shortcuts import render, redirect
@@ -44,7 +44,7 @@ def checkout_view(request):
             }
         )
 
-    shipping = Decimal("80.00")
+    shipping = Decimal("130.00")
     total = subtotal + shipping
 
     # =========================
@@ -66,6 +66,62 @@ def checkout_view(request):
                     "error": "Información incompleta",
                 },
             )
+        if delivery_type == "home":
+            required_fileds = [
+                "first_name",
+                "last_name",
+                "street",
+                "neighborhood",
+                "city",
+                "state",
+                "postal_code",
+                "phone",
+            ]
+
+            missing_fields = [
+                field for field in required_fileds if not request.POST.get(field)
+            ]
+
+            if missing_fields:
+                return render(
+                    request,
+                    "checkout/checkout.html",
+                    {
+                        "order_items": order_items,
+                        "subtotal": subtotal,
+                        "shipping": shipping,
+                        "total": total,
+                        "error": "Para entrega a domicilio debes completar todos los datos de envío.",
+                    },
+                )
+
+            postal_code = request.POST.get("postal_code")
+            phone = request.POST.get("phone")
+
+            if not re.match(r"^\d{5}$", postal_code):
+                return render(
+                    request,
+                    "checkout/checkout.html",
+                    {
+                        "order_items": order_items,
+                        "subtotal": subtotal,
+                        "shipping": shipping,
+                        "total": total,
+                        "error": "El Código Postal debe contener exactamente 5 dígitos",
+                    },
+                )
+            if not re.match(r"^\d{10}$", phone):
+                return render(
+                    request,
+                    "checkout/checkout.html",
+                    {
+                        "order_items": order_items,
+                        "subtotal": subtotal,
+                        "shipping": shipping,
+                        "total": total,
+                        "error": "El Teléfono debe contener exactamente 10 dígitos",
+                    },
+                )
 
         # =========================
         # 1. Crear Order (UNPAID)
