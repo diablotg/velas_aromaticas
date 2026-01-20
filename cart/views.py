@@ -13,6 +13,10 @@ def home(request):
 
 CART_SESSION_KEY = "cart"  # estructura: { "<product_id>": {"qty": int} }
 
+# Para mostrar boton de carrito completo
+show_cart_button = False
+# ===============================
+
 
 def _get_cart(request):
     return request.session.get(CART_SESSION_KEY, {})
