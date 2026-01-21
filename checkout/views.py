@@ -1,14 +1,12 @@
 from decimal import Decimal
 import re
-import stripe
 from django.conf import settings
 from django.shortcuts import render, redirect
 
 from cart.views import _get_cart
 from products.models import Product
 from orders.models import Order, OrderItem, ShippingAddress
-
-stripe.api_key = settings.STRIPE_SECRET_KEY
+from payments.stripe_client import create_checkout_session
 
 
 def checkout_view(request):
@@ -67,7 +65,7 @@ def checkout_view(request):
                 },
             )
         if delivery_type == "home":
-            required_fileds = [
+            required_fields = [
                 "first_name",
                 "last_name",
                 "street",
@@ -79,7 +77,7 @@ def checkout_view(request):
             ]
 
             missing_fields = [
-                field for field in required_fileds if not request.POST.get(field)
+                field for field in required_fields if not request.POST.get(field)
             ]
 
             if missing_fields:
@@ -190,9 +188,7 @@ def checkout_view(request):
         # =========================
         # 4. Stripe Checkout Session
         # =========================
-        session = stripe.checkout.Session.create(
-            mode="payment",
-            payment_method_types=["card"],
+        session = create_checkout_session(
             line_items=stripe_items,
             success_url=f"http://127.0.0.1:8000/orders/success/{order.id}/",
             cancel_url="http://127.0.0.1:8000/checkout/",
