@@ -182,7 +182,15 @@ def checkout_view(request):
             ShippingAddress.objects.create(
                 order=order,
                 delivery_type="pickup",
-                pickup_location="Av. Central #250, Querétaro, Qro.",
+                first_name="LOCAL 1",
+                last_name="LOCAL 1",
+                phone="4481114915",
+                street="Av. Central #250",
+                interior="SN",
+                neighborhood="Centro",
+                city="Querétaro",
+                state="Querétaro",
+                postal_code="76000",
             )
 
         # =========================
