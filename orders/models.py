@@ -62,5 +62,3 @@ class ShippingAddress(models.Model):
     city = models.CharField(max_length=100, blank=True)
     state = models.CharField(max_length=100, blank=True)
     postal_code = models.CharField(max_length=10, blank=True)
-
-    pickup_location = models.CharField(max_length=255, blank=True)
