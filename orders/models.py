@@ -1,9 +1,12 @@
-# orders/models.py
-
 from django.db import models
+import uuid
 
 
 class Order(models.Model):
+    public_id = models.UUIDField(
+        default=uuid.uuid4, unique=True, editable=False, db_index=True
+    )
+
     STATUS_CHOICES = (
         ("UNPAID", "No pagado"),
         ("PAID", "Pagado"),
