@@ -79,7 +79,7 @@ let intervalId = null;
 function checkOrderStatus() {
     attempts++;
 
-    fetch("{% url 'orders:order_status' order.id %}")
+    fetch("{% url 'orders:order_status' order.public_id %}")
         .then(res => res.json())
         .then(data => {
             if (data.status === "PAID") {
