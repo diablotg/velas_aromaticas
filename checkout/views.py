@@ -132,6 +132,7 @@ def checkout_view(request):
             delivery_type=delivery_type,
             status="UNPAID",
         )
+        request.session["last_order_public_id"] = str(order.public_id)
 
         # =========================
         # 2. Crear OrderItems
@@ -198,7 +199,7 @@ def checkout_view(request):
         # =========================
         session = create_checkout_session(
             line_items=stripe_items,
-            success_url=f"http://127.0.0.1:8000/orders/success/{order.id}/",
+            success_url=f"http://127.0.0.1:8000/orders/success/{order.public_id}/",
             cancel_url="http://127.0.0.1:8000/checkout/",
             metadata={
                 "order_id": str(order.id),
