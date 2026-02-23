@@ -1,6 +1,6 @@
 from decimal import Decimal
 import re
-from django.conf import settings
+
 from django.shortcuts import render, redirect
 
 from cart.views import _get_cart
@@ -18,9 +18,6 @@ def checkout_view(request):
     if not cart:
         return redirect("cart:home")
 
-    # =========================
-    # Preparar productos
-    # =========================
     product_ids = cart.keys()
     products = Product.objects.filter(id__in=product_ids)
 
@@ -64,6 +61,7 @@ def checkout_view(request):
                     "error": "Información incompleta",
                 },
             )
+
         if delivery_type == "home":
             required_fields = [
                 "first_name",
@@ -89,7 +87,7 @@ def checkout_view(request):
                         "subtotal": subtotal,
                         "shipping": shipping,
                         "total": total,
-                        "error": "Para entrega a domicilio debes completar todos los datos de envío.",
+                        "error": "Debes completar todos los datos de envío.",
                     },
                 )
 
@@ -105,9 +103,10 @@ def checkout_view(request):
                         "subtotal": subtotal,
                         "shipping": shipping,
                         "total": total,
-                        "error": "El Código Postal debe contener exactamente 5 dígitos",
+                        "error": "El Código Postal debe tener 5 dígitos.",
                     },
                 )
+
             if not re.match(r"^\d{10}$", phone):
                 return render(
                     request,
@@ -117,12 +116,12 @@ def checkout_view(request):
                         "subtotal": subtotal,
                         "shipping": shipping,
                         "total": total,
-                        "error": "El Teléfono debe contener exactamente 10 dígitos",
+                        "error": "El Teléfono debe tener 10 dígitos.",
                     },
                 )
 
         # =========================
-        # 1. Crear Order (UNPAID)
+        # 1️⃣ Crear Order (UNPAID)
         # =========================
         order = Order.objects.create(
             email=email,
@@ -132,10 +131,11 @@ def checkout_view(request):
             delivery_type=delivery_type,
             status="UNPAID",
         )
+
         request.session["last_order_public_id"] = str(order.public_id)
 
         # =========================
-        # 2. Crear OrderItems
+        # 2️⃣ Crear OrderItems + Stripe items
         # =========================
         stripe_items = []
 
@@ -163,7 +163,24 @@ def checkout_view(request):
             )
 
         # =========================
-        # 3. ShippingAddress
+        # 3️⃣ Agregar envío como line item en Stripe
+        # =========================
+        if shipping > 0:
+            stripe_items.append(
+                {
+                    "price_data": {
+                        "currency": "mxn",
+                        "product_data": {
+                            "name": "Costo de envío",
+                        },
+                        "unit_amount": int(shipping * 100),
+                    },
+                    "quantity": 1,
+                }
+            )
+
+        # =========================
+        # 4️⃣ ShippingAddress
         # =========================
         if delivery_type == "home":
             ShippingAddress.objects.create(
@@ -195,7 +212,7 @@ def checkout_view(request):
             )
 
         # =========================
-        # 4. Stripe Checkout Session
+        # 5️⃣ Crear sesión Stripe
         # =========================
         session = create_checkout_session(
             line_items=stripe_items,
